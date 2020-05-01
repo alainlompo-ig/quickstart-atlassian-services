@@ -19,6 +19,7 @@ Metadata:
         Parameters:
           - KeyPairName
           - NATInstanceType
+          - BastionHostRequired
       - Label:
           default: AWS Quick Start Configuration
         Parameters:
@@ -34,6 +35,8 @@ Metadata:
         default: ASI identifier
       KeyPairName:
         default: Key Name
+      BastionHostRequired:
+        default: Bastion Host required
       NATInstanceType:
         default: NAT Instance Type
       PrivateSubnet1CIDR:
@@ -69,6 +72,13 @@ Parameters:
     Description: Public/private key pairs allow you to securely connect to your instance
       after it launches
     Type: AWS::EC2::KeyPair::KeyName
+  BastionHostRequired:
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Set to true if a Bastion is required for the cluster (if true then a KeyPairName must be selected)
+    Type: String
   NATInstanceType:
     Default: t3.small
     AllowedValues:
@@ -137,6 +147,8 @@ Conditions:
   GovCloudCondition: !Equals
     - !Ref 'AWS::Region'
     - us-gov-west-1
+  UseBastionHost:
+    !Equals [!Ref BastionHostRequired, true]
 
 Resources:
   VPCStack:
@@ -170,6 +182,7 @@ Resources:
 
   BastionStack:
     Type: AWS::CloudFormation::Stack
+    Condition: UseBastionHost
     Properties:
       TemplateURL: !Sub
         - https://${QSS3BucketName}.${QSS3Region}.amazonaws.com/${QSS3KeyPrefix}templates/quickstart-bastion-for-atlassian-services.yaml
